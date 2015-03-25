@@ -1,0 +1,44 @@
+#!/usr/bin/env node
+
+var fs = require('fs');
+var amdclean = require(__dirname + '/../src/amdclean');
+
+var config = {};
+
+var args = process.argv.slice(2);
+
+var index = args.indexOf('--config');
+
+if (index > -1) {
+  var configFile = args.splice(index, 2)[1],
+      contents = fs.readFileSync(configFile, {encoding: 'utf-8'});
+
+  config = JSON.parse(contents);
+}
+
+var clean = function(code) {
+  config.code = code;
+
+  return amdclean.clean(config);
+};
+
+if (args.length > 0) {
+  args.forEach(function(arg) {
+    fs.readFile(arg, {encoding: 'utf-8'}, function(err, data) {
+      if (err) {
+        throw new Error(err);
+      }
+
+      process.stdout.write(clean(data));
+    });
+  });
+} else {
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('readable', function() {
+    var chunk = process.stdin.read();
+
+    if (chunk !== null) {
+      process.stdout.write(clean(chunk));
+    }
+  });
+}
